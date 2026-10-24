@@ -4,7 +4,7 @@
 
 MSAI-630-M40 Generative AI with Large Language Models · Residency Hackathon · Group 5 · Project 5
 
-Live demo: `<your-vercel-link>` · Results dashboard: **Results** tab of the live demo
+Live demo: [shopsmart-guard.vercel.app](https://shopsmart-guard.vercel.app/) · Results dashboard: **Results** tab of the live demo
 
 **Group 5:** Harshita Sharma (Model/Prompt Engineer) · Pooja Salvi (Product Lead) · Naga Rahul Yarramsetty (Integration Engineer) · Surya Aravind Maddula (Evaluation Lead) · Hetal Shailesh Gala (Ethics & Risk Lead)
 
