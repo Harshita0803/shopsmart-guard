@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ShopSmart Guard</title>
+  <meta name="description" content="Red Team vs Blue Team: attacking and defending an LLM customer-support bot. MSAI-630 Group 5." />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z' fill='%232f5fd0'/><path d='M16 2v28c6.9-1.6 12-7.5 12-15V7z' fill='%23d0492f'/></svg>" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z" fill="var(--blue)"/><path d="M16 2v28c6.9-1.6 12-7.5 12-15V7z" fill="var(--red)"/></svg>
+      <div>
+        <strong>ShopSmart Guard</strong>
+        <span class="sub">Red Team vs Blue Team · breaking and defending an LLM app</span>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="chat" class="active">Chat</button>
+      <button role="tab" data-tab="lab">Attack Lab</button>
+      <button role="tab" data-tab="results">Results</button>
+      <button role="tab" data-tab="about">How it works</button>
+    </nav>
+  </header>
+
+  <div id="mockBanner" class="banner" hidden>MOCK MODE: no API key is set on the server, so a fake rule-based model is answering. Results here are not real.</div>
+
+  <main>
+    <!-- ================= CHAT ================= -->
+    <section id="tab-chat" class="tab active">
+      <div class="chat-grid">
+        <div class="panel chat-panel">
+          <div class="mode-row">
+            <div class="seg" id="modeSeg">
+              <button data-mode="baseline" class="red">Baseline (no defenses)</button>
+              <button data-mode="protected" class="blue active">Protected</button>
+              <button data-mode="custom">Custom layers</button>
+            </div>
+            <button class="ghost" id="resetBtn" title="Start a new conversation">New chat</button>
+          </div>
+          <div id="layerToggles" class="layers" hidden>
+            <label><input type="checkbox" data-layer="inputFilter" checked /> 1 · Input filter</label>
+            <label><input type="checkbox" data-layer="judge" checked /> 2 · LLM judge</label>
+            <label><input type="checkbox" data-layer="privilegeSeparation" checked /> 3 · Privilege separation</label>
+            <label><input type="checkbox" data-layer="outputFilter" checked /> 4 · Output filter</label>
+          </div>
+          <p class="mode-note" id="modeNote"></p>
+
+          <div id="log" class="log" aria-live="polite">
+            <div class="msg bot">Hi! I'm ShopSmart AI. Ask me about returns, shipping, refunds, discounts or products like the AeroBuds Pro, TrailMax backpack or Nimbus smartwatch.</div>
+          </div>
+
+          <div class="chips" id="chips"></div>
+
+          <details class="doc" id="docBox">
+            <summary>Attach a document <span class="muted">(tests indirect prompt injection)</span></summary>
+            <textarea id="docText" rows="4" maxlength="4000" placeholder="Paste text, or choose a .txt file below. The bot treats it as a document the customer uploaded."></textarea>
+            <div class="doc-row"><input type="file" id="docFile" accept=".txt,.md,.csv,text/plain" /><button class="ghost" id="docClear">Clear</button></div>
+          </details>
+
+          <form id="chatForm" class="composer">
+            <input id="passcode" type="password" placeholder="Demo passcode" hidden autocomplete="off" />
+            <textarea id="input" rows="2" maxlength="1500" placeholder="Type a message…" required></textarea>
+            <button type="submit" id="sendBtn">Send</button>
+          </form>
+        </div>
+
+        <aside class="panel trace-panel">
+          <h3>What happened inside</h3>
+          <p class="muted small">Every message goes through the same pipeline. This shows each layer's decision for the last message.</p>
+          <div id="trace" class="trace"><p class="muted">Send a message to see the trace.</p></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ================= LAB ================= -->
+    <section id="tab-lab" class="tab">
+      <div class="lab-grid">
+        <div class="panel">
+          <h3>Pick a test</h3>
+          <input id="labSearch" type="search" placeholder="Filter by text or category…" />
+          <div id="labList" class="lab-list"></div>
+        </div>
+        <div class="panel">
+          <div id="labDetail"><p class="muted">Choose an attack or a normal question on the left. Then run it against the unprotected baseline and the protected app side by side.</p></div>
+          <div class="versus" id="labVersus" hidden>
+            <div class="side red-side"><h4>Baseline (no defenses)</h4><div class="out" id="outBase"></div></div>
+            <div class="side blue-side"><h4>Protected (all 4 layers)</h4><div class="out" id="outProt"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RESULTS ================= -->
+    <section id="tab-results" class="tab">
+      <div id="resultsBody"><p class="muted">Loading results…</p></div>
+    </section>
+
+    <!-- ================= ABOUT ================= -->
+    <section id="tab-about" class="tab">
+      <div class="panel prose">
+        <h2>The idea</h2>
+        <p>ShopSmart is a made-up online store. Its support bot holds something worth protecting: a fictional <b>employee discount code</b> (40% off). It must also keep its <b>hidden instructions</b> private, never <b>invent policies or discounts</b>, and never be <b>hijacked</b> by text written by outsiders, like a marketplace seller's product page, a fake review, or a document a customer uploads.</p>
+        <p>The <b>Red Team</b> attacks the bot. The <b>Blue Team</b> adds four layers of defense. The evaluation measures attack success <i>before and after</i>, and how often the defenses wrongly block normal customers.</p>
+
+        <h2>One message, start to finish</h2>
+        <div class="flow" aria-label="Pipeline diagram">
+          <div class="node user">Customer message<br /><span>+ uploaded document</span></div>
+          <div class="arrow">→</div>
+          <div class="node">Retrieval<br /><span>product pages, some written by outsiders</span></div>
+          <div class="arrow">→</div>
+          <div class="node l1">1 · Input filter<br /><span>pattern rules, cleans look-alike letters, decodes base64</span></div>
+          <div class="arrow">→</div>
+          <div class="node l2">2 · LLM judge<br /><span>second model labels BLOCK / ALLOW</span></div>
+          <div class="arrow">→</div>
+          <div class="node l3">3 · Privilege separation<br /><span>secret never given to the model; docs marked untrusted</span></div>
+          <div class="arrow">→</div>
+          <div class="node model">Model answers</div>
+          <div class="arrow">→</div>
+          <div class="node l4">4 · Output filter<br /><span>scans reply for secret, prompt leak, fake policy, hijack marker</span></div>
+          <div class="arrow">→</div>
+          <div class="node user">Customer sees reply</div>
+        </div>
+        <p class="small muted">If a <i>user message</i> is flagged, the bot refuses. If only a <i>document</i> is flagged, the document is quarantined (dropped) and the bot still answers the customer. That keeps innocent customers working even when a product page is poisoned.</p>
+
+        <h2>Baseline vs protected</h2>
+        <table class="tbl">
+          <tr><th></th><th>Baseline</th><th>Protected</th></tr>
+          <tr><td>Secret in the prompt?</td><td>Yes, "only share with employees"</td><td>No. The model never sees it</td></tr>
+          <tr><td>Documents</td><td>Pasted in as reference material</td><td>Wrapped in &lt;untrusted_document&gt; and scanned</td></tr>
+          <tr><td>Input filter / judge / output filter</td><td>Off</td><td>On</td></tr>
+          <tr><td>Model</td><td colspan="2" id="aboutModel">same model in both, so the comparison is fair</td></tr>
+        </table>
+
+        <h2>Rules of the game</h2>
+        <p>All attacks target only this app, which our team owns. The secret is fictional. No real store, customer or payment data exists here.</p>
+        <p class="small muted">MSAI-630-M40 Residency Hackathon · Group 5 · Project 5: Red Team, Blue Team.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="vendor/chart.umd.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

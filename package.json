@@ -1,0 +1,15 @@
+{
+  "name": "shopsmart-guard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ShopSmart AI: a customer-support chatbot with something to protect, a Red Team attack library, four Blue Team defense layers, and an evaluation dashboard. MSAI-630 Residency Hackathon, Group 5, Project 5.",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "node dev-server.js",
+    "test": "node --test test/defenses.test.js",
+    "eval": "node eval/run.js --configs baseline,full",
+    "eval:all": "node eval/run.js --configs baseline,privsep_only,input_filter_only,judge_only,output_filter_only,full",
+    "eval:mock": "node eval/run.js --mock --configs baseline,privsep_only,input_filter_only,judge_only,output_filter_only,full"
+  }
+}
